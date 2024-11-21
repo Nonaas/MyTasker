@@ -1,0 +1,20 @@
+﻿.todo-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh; /* Full viewport height */
+    margin-top: 15px;
+    padding: 0;
+}
+
+.todo-section {
+    flex: 1; /* Take up equal space */
+    overflow-y: auto; /* Ensure scrollable content if needed */
+    padding: 10px;
+    box-sizing: border-box;
+    border-top: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
+}
+
+h2 {
+    margin-top: 0;
+}
