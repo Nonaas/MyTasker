@@ -1,0 +1,76 @@
+﻿@page "/"
+@inject ILogger<Home> logger
+
+
+<h1>My Tasker</h1>
+Welcome to <i>My Tasker</i>!
+
+<h2>Open:</h2>
+<ul>
+    @foreach (ToDo todo in MyTodosOpen)
+    {
+        <li>
+            <input type="checkbox" checked="@todo.Done" @onchange="(e => CheckboxChanged(todo, e))" />
+            @todo.Description
+        </li>
+    }
+</ul>
+
+<h2>Done:</h2>
+<ul>
+    @foreach (ToDo todo in MyTodosDone)
+    {
+        <li>
+            <strike>
+                <input type="checkbox" checked="@todo.Done" @onchange="(e => CheckboxChanged(todo, e))" />
+                @todo.Description
+            </strike>
+        </li>
+    }
+</ul>
+
+
+@code {
+    public List<ToDo> MyTodosOpen { get; set; } = new();
+    public List<ToDo> MyTodosDone { get; set; } = new();
+
+    protected override void OnInitialized()
+    {
+        ToDo myTodo1 = new ToDo("ToDo Nummer 1", false);
+        ToDo myTodo2 = new ToDo("ToDo Nummer 2", false);
+        ToDo myTodo3 = new ToDo("ToDo Nummer 3", false);
+
+        MyTodosOpen.Add(myTodo1);
+        MyTodosOpen.Add(myTodo2);
+        MyTodosOpen.Add(myTodo3);
+    }
+
+    private void CheckboxChanged(ToDo todo, ChangeEventArgs e)
+    {
+        // Update ToDo item's 'Done'
+        todo.Done = (bool)e.Value;
+
+        // Add/Remove from appropriate list
+        if (todo.Done)
+        {
+            MyTodosOpen.Remove(todo);
+            MyTodosDone.Add(todo);
+        }
+        else
+        {
+            MyTodosDone.Remove(todo);
+            MyTodosOpen.Add(todo);
+        }
+
+        // Sorting 
+        MyTodosOpen = MyTodosOpen.OrderBy(todo => todo.Description).ToList();
+        MyTodosDone = MyTodosDone.OrderBy(todo => todo.Description).ToList();
+
+        // Notify Blazor to re-render UI
+        StateHasChanged();
+
+        logger.LogDebug($"Checkbox changed for '{todo.Description}', new value: {todo.Done}");
+    }
+
+    
+}

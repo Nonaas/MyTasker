@@ -1,0 +1,97 @@
+﻿@page "/weather"
+
+<h1>Wetter</h1>
+
+
+<EditForm Model="@UserLocation" OnSubmit="@Submit">
+    <div style="display: flex; align-items: center;">
+        <label for="plz" style="margin: 8px;">PLZ: </label>
+        <InputText id="plz" @bind-Value="UserLocation.PLZ" />
+    </div>
+    <br />
+    <button class="btn btn-primary" type="submit">Aktualisieren</button>
+</EditForm>
+
+<br />
+
+@if (forecasts == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Temp. (C)</th>
+                <th>Temp. (F)</th>
+                <th>Summary</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var forecast in forecasts)
+            {
+                <tr>
+                    <td>@forecast.Date.ToShortDateString()</td>
+                    <td>@forecast.TemperatureC</td>
+                    <td>@forecast.TemperatureF</td>
+                    <td>@forecast.Summary</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    #region Weather Forecast Logic
+
+    private WeatherForecast[]? forecasts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Simulate asynchronous loading to demonstrate a loading indicator
+        await Task.Delay(500);
+
+        FetchWeatherData();
+    }
+
+    private void FetchWeatherData()
+    {
+        var startDate = DateOnly.FromDateTime(DateTime.Now);
+        var summaries = new[] { "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching" };
+        forecasts = Enumerable.Range(1, 5).Select(index => new WeatherForecast
+            {
+                Date = startDate.AddDays(index),
+                TemperatureC = Random.Shared.Next(-20, 55),
+                Summary = summaries[Random.Shared.Next(summaries.Length)]
+            }).ToArray();
+    }
+
+    private class WeatherForecast
+    {
+        public DateOnly Date { get; set; }
+        public int TemperatureC { get; set; }
+        public string? Summary { get; set; }
+        public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+    }
+
+    #endregion
+
+
+
+    public Location UserLocation { get; set; }
+
+    protected override void OnInitialized()
+    {
+        UserLocation = new Location();
+    }
+
+    public void Submit()
+    {
+        FetchWeatherData();
+    }
+
+
+    
+}
