@@ -78,14 +78,7 @@ else
 
     #endregion
 
-
-
-    public Location UserLocation { get; set; }
-
-    protected override void OnInitialized()
-    {
-        UserLocation = new Location();
-    }
+    public Location UserLocation { get; set; } = new();
 
     public void Submit()
     {
