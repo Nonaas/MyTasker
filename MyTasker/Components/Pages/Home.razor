@@ -10,7 +10,7 @@ Welcome to <i>My Tasker</i>!
     @foreach (ToDo todo in MyTodosOpen)
     {
         <li>
-            <input type="checkbox" checked="@todo.Done" @onchange="(e => CheckboxChanged(todo, e))" />
+            <input type="checkbox" @bind="todo.Done" @onclick="(e => MarkTodoDone(todo))" />
             @todo.Description
         </li>
     }
@@ -22,7 +22,7 @@ Welcome to <i>My Tasker</i>!
     {
         <li>
             <strike>
-                <input type="checkbox" checked="@todo.Done" @onchange="(e => CheckboxChanged(todo, e))" />
+                <input type="checkbox" @bind="todo.Done" @onclick="(e => MarkTodoOpen(todo))" />
                 @todo.Description
             </strike>
         </li>
@@ -31,6 +31,7 @@ Welcome to <i>My Tasker</i>!
 
 
 @code {
+
     public List<ToDo> MyTodosOpen { get; set; } = new();
     public List<ToDo> MyTodosDone { get; set; } = new();
 
@@ -45,31 +46,35 @@ Welcome to <i>My Tasker</i>!
         MyTodosOpen.Add(myTodo3);
     }
 
-    private void CheckboxChanged(ToDo todo, ChangeEventArgs e)
+    private void MarkTodoDone(ToDo todo)
     {
-        // Update ToDo item's 'Done'
-        todo.Done = (bool)e.Value;
+        todo.Done = true;
 
-        // Add/Remove from appropriate list
-        if (todo.Done)
-        {
-            MyTodosOpen.Remove(todo);
-            MyTodosDone.Add(todo);
-        }
-        else
-        {
-            MyTodosDone.Remove(todo);
-            MyTodosOpen.Add(todo);
-        }
+        MyTodosOpen.Remove(todo);
+        MyTodosDone.Add(todo);
 
+        logger.LogDebug($"Marked ");
+
+        SortAllEntries();
+    }
+
+    private void MarkTodoOpen(ToDo todo)
+    {
+        todo.Done = false;
+
+        MyTodosDone.Remove(todo);
+        MyTodosOpen.Add(todo);
+
+        logger.LogDebug($"222 Checkbox changed for '{todo.Description}', new value: {todo.Done}");
+
+        SortAllEntries();
+    }
+
+    private void SortAllEntries()
+    {
         // Sorting 
         MyTodosOpen = MyTodosOpen.OrderBy(todo => todo.Description).ToList();
         MyTodosDone = MyTodosDone.OrderBy(todo => todo.Description).ToList();
-
-        // Notify Blazor to re-render UI
-        StateHasChanged();
-
-        logger.LogDebug($"Checkbox changed for '{todo.Description}', new value: {todo.Done}");
     }
 
     
