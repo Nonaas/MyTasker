@@ -1,15 +1,16 @@
-﻿namespace MyTasker.Domain.Models
+﻿using SQLite;
+
+namespace MyTasker.Domain.Models
 {
     public class ToDo
     {
-        public string Description { get; set; }
-        public bool Done { get; set; }
-        public bool Disabled { get; set; } = false;
-         
-        public ToDo(string description, bool done)
-        {
-            Description = description;
-            Done = done;
-        }
+        [PrimaryKey, AutoIncrement]
+        public int Id { get; set; }
+
+        public string? Description { get; set; }
+        public bool Done { get; set; } = false;
+        public bool Redeemed { get; set; } = false;
+
+        public ToDo() { }
     }
 }

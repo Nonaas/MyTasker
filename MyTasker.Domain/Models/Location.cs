@@ -2,6 +2,6 @@
 {
     public class Location
     {
-        public string PLZ { get; set; }
+        public string? PLZ { get; set; }
     }
 }

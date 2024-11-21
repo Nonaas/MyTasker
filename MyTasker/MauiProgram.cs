@@ -12,6 +12,7 @@ namespace MyTasker
                 .ConfigureFonts(fonts =>
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
+                    fonts.AddFont("FreckleFace-Regular.ttf", "FreckleFace");
                 });
 
             builder.Services.AddMauiBlazorWebView();

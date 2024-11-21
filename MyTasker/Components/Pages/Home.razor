@@ -1,11 +1,32 @@
 ﻿@page "/"
 @inject ILogger<Home> logger
 
+<div class="header-container">
+    <div class="title-container">
+        <h1>MyTasker</h1>
+    </div>
 
-<h1>My Tasker</h1>
-<p>Welcome to <i>My Tasker</i> !</p>
+    <div class="stats-container">
+        <div class="level">
+            <p>Level: <span>@MyLevel</span></p>
+        </div>
 
-<button class="btn btn-primary" @onclick="AddNewTodo">ToDo hinzufügen</button>
+        <div class="xp-container">
+            <p>XP: <span>@MyXP</span></p>
+            <div class="progress-bar">
+                <div class="progress-bar-fill" style="width: @GetXPPercentage()%;"></div>
+            </div>
+            <p>@GetXPPercentage()% bis zum nächsten Level</p>
+        </div>
+    </div>
+
+    <div class="button-container">
+        <button class="btn btn-primary" @onclick="AddNewTodo">Aufgabe hinzufügen</button>
+        <button class="btn btn-danger" @onclick="DeleteDoneTodos">Abgeschlossene Aufgaben löschen</button>
+    </div>
+</div>
+
+
 <div class="todo-container">
     <h2>Offene Aufgaben:</h2>
     <div class="todo-section">
@@ -37,6 +58,10 @@
 
 
 @code {
+    public int MyLevel { get; set; }
+    public int MyXP { get; set; }
+    private int XPforNextLevel { get; set; } = 100;
+
     private List<ToDo> _myTodosOpen = new();
     public List<ToDo> MyTodosOpen
     {
@@ -44,7 +69,6 @@
         set
         {
             _myTodosOpen = value;
-            SortAllEntries();
         }
     }
     private List<ToDo> _myTodosDone = new();
@@ -53,46 +77,64 @@
         set
         {
             _myTodosDone = value;
-            SortAllEntries();
         } 
     }
 
-    protected override void OnInitialized()
+    protected override async void OnInitialized()
     {
-        ToDo myTodo1 = new ToDo("ToDo Nummer 1", false);
-        ToDo myTodo2 = new ToDo("ToDo Nummer 2", false);
-        ToDo myTodo3 = new ToDo("ToDo Nummer 3", false);
+        // Fetch from db
+        MyTodosOpen = await App.Database!.GetToDosAsync(false);
+        MyTodosDone = await App.Database.GetToDosAsync(true);
+        App.Stats = await App.Database.GetStatsAsync();
 
-        MyTodosOpen.Add(myTodo1);
-        MyTodosOpen.Add(myTodo2);
-        MyTodosOpen.Add(myTodo3);
+        // Set user stats
+        MyLevel = App.Stats.CurrentLevel;
+        MyXP = App.Stats.CurrentXP;
+
+        logger.LogDebug($"Finished initializing");
+
+        StateHasChanged();
     }
 
-    private void MarkTodoDone(ToDo todo)
+    #region ToDo Logic
+
+    private async void MarkTodoDone(ToDo todo)
     {
         todo.Done = true;
+
+        if(!todo.Redeemed)
+        {
+            AddXP(10);
+            await App.Database!.UpdateStatsAsync(MyLevel, MyXP, XPforNextLevel);
+            todo.Redeemed = true;
+        }
 
         MyTodosOpen.Remove(todo);
         MyTodosDone.Add(todo);
 
+        await App.Database!.UpdateToDoAsync(todo);
+
+        SortAllEntries();
+
+        StateHasChanged();
+
         logger.LogDebug($"Marked todo done.");
     }
 
-    private void MarkTodoOpen(ToDo todo)
+    private async void MarkTodoOpen(ToDo todo)
     {
         todo.Done = false;
 
         MyTodosDone.Remove(todo);
         MyTodosOpen.Add(todo);
 
-        logger.LogDebug($"Marked todo open.");
-    }
+        await App.Database!.UpdateToDoAsync(todo);
 
-    private void SortAllEntries()
-    {
-        // Sorting 
-        MyTodosOpen = MyTodosOpen.OrderBy(todo => todo.Description).ToList();
-        MyTodosDone = MyTodosDone.OrderBy(todo => todo.Description).ToList();
+        SortAllEntries();
+
+        StateHasChanged();
+
+        logger.LogDebug($"Marked todo open.");
     }
 
     private async void AddNewTodo()
@@ -106,12 +148,70 @@
             Keyboard.Text
         );
 
-        ToDo newTodo = new(newTodoInput.Trim(), false);
+        if (string.IsNullOrWhiteSpace(newTodoInput)) return;
+
+        ToDo newTodo = new()
+        {
+            Description = newTodoInput.Trim()
+        };
         MyTodosOpen.Add(newTodo);
+
+        int rows = await App.Database!.SaveToDoAsync(newTodo);
+        logger.LogDebug($"INSERT - rows modified= " + rows);
+        SortAllEntries();
 
         StateHasChanged();
 
         logger.LogDebug($"Added new todo.");
     }
 
+    private async void DeleteDoneTodos()
+    {
+        bool confirm = await Application.Current!.Windows[0].Page!.DisplayAlert(
+            "Löschen", 
+            "Alle abgeschlossenen Aufgaben löschen?", 
+            "Ja", 
+            "Nein"
+        );
+
+        if (confirm)
+        {
+            MyTodosDone.Clear();
+
+            await App.Database!.DeleteAllDoneTodosAsync();
+
+            StateHasChanged();
+        }
+    }
+
+    private void SortAllEntries()
+    {
+        // Sorting
+        MyTodosOpen = MyTodosOpen.OrderByDescending(todo => todo.Id).ToList();
+        MyTodosDone = MyTodosDone.OrderByDescending(todo => todo.Id).ToList();
+    }
+
+    #endregion
+
+    #region Stats Logic
+
+    private void AddXP(int xpAmount)
+    {
+        MyXP += xpAmount;
+
+        // Level up if XP reaches or exceeds the required amount
+        while (MyXP >= XPforNextLevel)
+        {
+            MyXP -= XPforNextLevel;
+            MyLevel++;
+            XPforNextLevel += 50;
+        }
+    }
+
+    private int GetXPPercentage()
+    {
+        return (int)((float)MyXP / XPforNextLevel * 100);
+    }
+
+    #endregion
 }
