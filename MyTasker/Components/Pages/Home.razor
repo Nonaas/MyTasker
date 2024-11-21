@@ -3,37 +3,59 @@
 
 
 <h1>My Tasker</h1>
-Welcome to <i>My Tasker</i>!
+<p>Welcome to <i>My Tasker</i> !</p>
 
-<h2>Open:</h2>
-<ul>
-    @foreach (ToDo todo in MyTodosOpen)
-    {
-        <li>
-            <input type="checkbox" @bind="todo.Done" @onclick="(e => MarkTodoDone(todo))" />
-            @todo.Description
-        </li>
-    }
-</ul>
-
-<h2>Done:</h2>
-<ul>
-    @foreach (ToDo todo in MyTodosDone)
-    {
-        <li>
-            <strike>
-                <input type="checkbox" @bind="todo.Done" @onclick="(e => MarkTodoOpen(todo))" />
-                @todo.Description
-            </strike>
-        </li>
-    }
-</ul>
+<button class="btn btn-primary" @onclick="AddNewTodo">ToDo hinzufügen</button>
+<div class="todo-container">
+    <h2>Offene Aufgaben:</h2>
+    <div class="todo-section">
+        <ul>
+            @foreach (ToDo todo in MyTodosOpen)
+            {
+                <li>
+                    <input type="checkbox" @bind="todo.Done" @onclick="(e => MarkTodoDone(todo))" />
+                    @todo.Description
+                </li>
+            }
+        </ul>
+    </div>
+    <h2>Abgeschlossen:</h2>
+    <div class="todo-section">
+        <ul>
+            @foreach (ToDo todo in MyTodosDone)
+            {
+                <li>
+                    <strike>
+                        <input type="checkbox" @bind="todo.Done" @onclick="(e => MarkTodoOpen(todo))" />
+                        @todo.Description
+                    </strike>
+                </li>
+            }
+        </ul>
+    </div>
+</div>
 
 
 @code {
-
-    public List<ToDo> MyTodosOpen { get; set; } = new();
-    public List<ToDo> MyTodosDone { get; set; } = new();
+    private List<ToDo> _myTodosOpen = new();
+    public List<ToDo> MyTodosOpen
+    {
+        get { return _myTodosOpen; }
+        set
+        {
+            _myTodosOpen = value;
+            SortAllEntries();
+        }
+    }
+    private List<ToDo> _myTodosDone = new();
+    public List<ToDo> MyTodosDone { 
+        get{return _myTodosDone;} 
+        set
+        {
+            _myTodosDone = value;
+            SortAllEntries();
+        } 
+    }
 
     protected override void OnInitialized()
     {
@@ -53,9 +75,7 @@ Welcome to <i>My Tasker</i>!
         MyTodosOpen.Remove(todo);
         MyTodosDone.Add(todo);
 
-        logger.LogDebug($"Marked ");
-
-        SortAllEntries();
+        logger.LogDebug($"Marked todo done.");
     }
 
     private void MarkTodoOpen(ToDo todo)
@@ -65,9 +85,7 @@ Welcome to <i>My Tasker</i>!
         MyTodosDone.Remove(todo);
         MyTodosOpen.Add(todo);
 
-        logger.LogDebug($"222 Checkbox changed for '{todo.Description}', new value: {todo.Done}");
-
-        SortAllEntries();
+        logger.LogDebug($"Marked todo open.");
     }
 
     private void SortAllEntries()
@@ -77,5 +95,23 @@ Welcome to <i>My Tasker</i>!
         MyTodosDone = MyTodosDone.OrderBy(todo => todo.Description).ToList();
     }
 
-    
+    private async void AddNewTodo()
+    {
+        string newTodoInput = await Application.Current!.Windows[0].Page!.DisplayPromptAsync(
+            "Hinzufügen", 
+            "Neues ToDo hinzufügen", 
+            "Bestätigen", "Abbrechen", 
+            null,   // Placeholder
+            -1,     // Max Length
+            Keyboard.Text
+        );
+
+        ToDo newTodo = new(newTodoInput.Trim(), false);
+        MyTodosOpen.Add(newTodo);
+
+        StateHasChanged();
+
+        logger.LogDebug($"Added new todo.");
+    }
+
 }
