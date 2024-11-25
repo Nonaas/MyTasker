@@ -1,22 +1,24 @@
 ﻿@page "/"
-@inject ILogger<Home> logger
+@inject ILogger<Home> _logger
+@inject IStatsService _statsService
+
 
 <div class="header-container">
     <div class="title-container">
-        <h1>MyTasker</h1>
+        <h1>Meine<br />Aufgaben</h1>
     </div>
 
     <div class="stats-container">
         <div class="level">
-            <p>Level: <span>@MyLevel</span></p>
+            <p>Level: <span>@_statsService.MyLevel</span></p>
         </div>
 
         <div class="xp-container">
-            <p>XP: <span>@MyXP</span></p>
+            <p>XP: <span>@_statsService.MyXP</span></p>
             <div class="progress-bar">
-                <div class="progress-bar-fill" style="width: @GetXPPercentage()%;"></div>
+                <div class="progress-bar-fill" style="width: @_statsService.GetXPPercentage()%;"></div>
             </div>
-            <p>@GetXPPercentage()% bis zum nächsten Level</p>
+            <p>@_statsService.GetXPPercentage()% bis zum nächsten Level</p>
         </div>
     </div>
 
@@ -26,42 +28,42 @@
     </div>
 </div>
 
-
 <div class="todo-container">
     <h2>Offene Aufgaben:</h2>
     <div class="todo-section">
-        <ul>
-            @foreach (ToDo todo in MyTodosOpen)
-            {
-                <li>
-                    <input type="checkbox" @bind="todo.Done" @onclick="(e => MarkTodoDone(todo))" />
-                    @todo.Description
-                </li>
-            }
-        </ul>
-    </div>
-    <h2>Abgeschlossen:</h2>
-    <div class="todo-section">
-        <ul>
-            @foreach (ToDo todo in MyTodosDone)
-            {
-                <li>
-                    <strike>
-                        <input type="checkbox" @bind="todo.Done" @onclick="(e => MarkTodoOpen(todo))" />
+        <div class="card">
+            <ul>
+                @foreach (ToDo todo in MyTodosOpen)
+                {
+                    <li>
+                        <input type="checkbox" @bind="todo.Done" @onclick="(e => MarkTodoDone(todo))" />
                         @todo.Description
-                    </strike>
-                </li>
-            }
-        </ul>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+
+    <h2>Abgeschlossene Aufgaben:</h2>
+    <div class="todo-section">
+        <div class="card completed">
+            <ul>
+                @foreach (ToDo todo in MyTodosDone)
+                {
+                    <li>
+                        <strike>
+                            <input type="checkbox" @bind="todo.Done" @onclick="(e => MarkTodoOpen(todo))" />
+                            @todo.Description
+                        </strike>
+                    </li>
+                }
+            </ul>
+        </div>
     </div>
 </div>
 
 
 @code {
-    public int MyLevel { get; set; }
-    public int MyXP { get; set; }
-    private int XPforNextLevel { get; set; } = 100;
-
     private List<ToDo> _myTodosOpen = new();
     public List<ToDo> MyTodosOpen
     {
@@ -88,15 +90,15 @@
         App.Stats = await App.Database.GetStatsAsync();
 
         // Set user stats
-        MyLevel = App.Stats.CurrentLevel;
-        MyXP = App.Stats.CurrentXP;
+        _statsService.MyLevel = App.Stats.CurrentLevel;
+        _statsService.MyXP = App.Stats.CurrentXP;
 
-        logger.LogDebug($"Finished initializing");
+        _logger.LogDebug($"Finished initializing home page");
 
         StateHasChanged();
     }
 
-    #region ToDo Logic
+    #region Quick-ToDo Logic
 
     private async void MarkTodoDone(ToDo todo)
     {
@@ -104,8 +106,8 @@
 
         if(!todo.Redeemed)
         {
-            AddXP(10);
-            await App.Database!.UpdateStatsAsync(MyLevel, MyXP, XPforNextLevel);
+            _statsService.AddXP(10);
+            await App.Database!.UpdateStatsAsync(_statsService.MyLevel, _statsService.MyXP, _statsService.XPforNextLevel);
             todo.Redeemed = true;
         }
 
@@ -118,7 +120,7 @@
 
         StateHasChanged();
 
-        logger.LogDebug($"Marked todo done.");
+        _logger.LogDebug($"Marked todo done.");
     }
 
     private async void MarkTodoOpen(ToDo todo)
@@ -134,7 +136,7 @@
 
         StateHasChanged();
 
-        logger.LogDebug($"Marked todo open.");
+        _logger.LogDebug($"Marked todo open.");
     }
 
     private async void AddNewTodo()
@@ -143,7 +145,7 @@
             "Hinzufügen", 
             "Neues ToDo hinzufügen", 
             "Bestätigen", "Abbrechen", 
-            null,   // Placeholder
+            "Meine neue Aufgabe",   // Placeholder
             -1,     // Max Length
             Keyboard.Text
         );
@@ -157,12 +159,12 @@
         MyTodosOpen.Add(newTodo);
 
         int rows = await App.Database!.SaveToDoAsync(newTodo);
-        logger.LogDebug($"INSERT - rows modified= " + rows);
+        _logger.LogDebug($"INSERT - rows modified= " + rows);
         SortAllEntries();
 
         StateHasChanged();
 
-        logger.LogDebug($"Added new todo.");
+        _logger.LogDebug($"Added new todo.");
     }
 
     private async void DeleteDoneTodos()
@@ -193,25 +195,4 @@
 
     #endregion
 
-    #region Stats Logic
-
-    private void AddXP(int xpAmount)
-    {
-        MyXP += xpAmount;
-
-        // Level up if XP reaches or exceeds the required amount
-        while (MyXP >= XPforNextLevel)
-        {
-            MyXP -= XPforNextLevel;
-            MyLevel++;
-            XPforNextLevel += 50;
-        }
-    }
-
-    private int GetXPPercentage()
-    {
-        return (int)((float)MyXP / XPforNextLevel * 100);
-    }
-
-    #endregion
 }

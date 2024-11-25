@@ -1,0 +1,325 @@
+﻿@page "/lists"
+@inject ILogger<Home> _logger
+@inject IStatsService _statsService
+
+<div class="header-container">
+    <div class="title-container">
+        <h1>Meine<br />Listen</h1>
+    </div>
+
+    <div class="stats-container">
+        <div class="level">
+            <p>Level: <span>@_statsService.MyLevel</span></p>
+        </div>
+
+        <div class="xp-container">
+            <p>XP: <span>@_statsService.MyXP</span></p>
+            <div class="progress-bar">
+                <div class="progress-bar-fill" style="width: @_statsService.GetXPPercentage()%;"></div>
+            </div>
+            <p>@_statsService.GetXPPercentage()% bis zum nächsten Level</p>
+        </div>
+    </div>
+
+    <div class="button-container">
+        <button class="btn btn-primary" @onclick="AddNewList">Liste hinzufügen</button>
+        <button class="btn btn-danger" @onclick="DeleteDoneLists">Abgeschlossene Listen löschen</button>
+    </div>
+</div>
+
+<div class="lists-container">
+    <h2>Offene Listen:</h2>
+    <div class="lists-section">
+        <div class="card">
+            <ul>
+                @foreach (ToDoList todoList in _myListsOpen)
+                {
+                    <li>
+                        <input type="checkbox" @bind="todoList.Done" @onclick="(e => MarkTodoListDone(todoList))" />
+                        <button class="link-button" @onclick="async () => await ShowTodoItemsModal(todoList)">
+                            @todoList.Name
+                        </button>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+
+    <h2>Abgeschlossene Listen:</h2>
+    <div class="lists-section">
+        <div class="card completed">
+            <ul>
+                @foreach (ToDoList todoList in _myListsDone)
+                {
+                    <li>
+                        <strike>
+                            <input type="checkbox" @bind="todoList.Done" @onclick="(e => MarkTodoListOpen(todoList))" />
+                            <button class="link-button" @onclick="async () => await ShowTodoItemsModal(todoList)">
+                                @todoList.Name
+                            </button>
+                        </strike>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+@if (showModal)
+{
+    <div class="modal-overlay @(showModal ? "" : "hidden")">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>@selectedList?.Name</h3>
+                <button class="close-button" @onclick="CloseModal">X</button>
+            </div>
+            <div class="modal-buttons">
+                <input type="text" @bind="newTodoDescription" placeholder="Neue Aufgabe..." />
+                <button class="add-button" @onclick="async () => await AddTodoItem()">Hinzufügen</button>
+            </div>
+            <ul class="modal-list">
+                @foreach (var todo in selectedListTodos)
+                {
+                    <li>
+                        @if (todo.Done)
+                        {
+                            <strike>
+                                <input type="checkbox" @bind="todo.Done" @onclick="async () => await MarkTodoAsDone(todo)" />
+                                @todo.Description
+                            </strike>
+                        }
+                        else
+                        {
+                            <input type="checkbox" @bind="todo.Done" @onclick="async () => await MarkTodoAsDone(todo)" />
+                            @todo.Description
+                        }
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+}
+
+
+@code {
+
+    private bool showModal = false;
+    private ToDoList? selectedList;
+    private List<ToDo> selectedListTodos = new();
+    private string newTodoDescription = "";
+
+    private List<ToDoList> _myListsOpen = new();
+    public List<ToDoList> MyListsOpen
+    {
+        get { return _myListsOpen; }
+        set
+        {
+            _myListsOpen = value;
+        }
+    }
+    private List<ToDoList> _myListsDone = new();
+    public List<ToDoList> MyListsDone
+    {
+        get { return _myListsDone; }
+        set
+        {
+            _myListsDone = value;
+        }
+    }
+
+
+    protected override async void OnInitialized()
+    {
+        // Fetch from db
+        _myListsOpen = await App.Database!.GetTodoListsAsync(false);
+        _myListsDone = await App.Database.GetTodoListsAsync(true);
+
+        _logger.LogDebug($"Finished initializing lists page");
+
+        StateHasChanged();
+    }
+
+    #region CRUD List operations
+    private async void AddNewList()
+    {
+        string newTodoListInput = await Application.Current!.Windows[0].Page!.DisplayPromptAsync(
+            "Hinzufügen",
+            "Neue Liste hinzufügen",
+            "Bestätigen", "Abbrechen",
+            "Meine neue Liste",   // Placeholder
+            -1,     // Max Length
+            Keyboard.Text
+        );
+
+        if (string.IsNullOrWhiteSpace(newTodoListInput)) return;
+
+        ToDoList newTodoList = new()
+            {
+                Name = newTodoListInput.Trim()
+            };
+        _myListsOpen.Add(newTodoList);
+
+        int rows = await App.Database!.SaveToDoListAsync(newTodoList);
+        _logger.LogDebug($"INSERT - rows modified= " + rows);
+        SortAllLists();
+
+        StateHasChanged();
+
+        _logger.LogDebug($"Added new todo.");
+    }
+
+    private async void DeleteDoneLists()
+    {
+        bool confirm = await Application.Current!.Windows[0].Page!.DisplayAlert(
+            "Löschen",
+            "Alle abgeschlossenen Listen löschen?",
+            "Ja",
+            "Nein"
+        );
+
+        if (confirm)
+        {
+            _myListsDone.Clear();
+
+            await App.Database!.DeleteAllDoneToDoListsAsync();
+
+            StateHasChanged();
+        }
+    }
+
+    private void SortAllLists()
+    {
+        // Sorting
+        _myListsOpen = _myListsOpen.OrderByDescending(todoList => todoList.Id).ToList();
+        _myListsDone = _myListsDone.OrderByDescending(todoList => todoList.Id).ToList();
+    }
+    #endregion
+
+    #region Checkbox Events
+    private async void MarkTodoListDone(ToDoList todoList)
+    {
+        todoList.Done = true;
+        //
+        // TODO: 
+        // Add check if list still has open items inside
+        //
+        if (!todoList.Redeemed)
+        {
+            _statsService.AddXP(25);
+            await App.Database!.UpdateStatsAsync(_statsService.MyLevel, _statsService.MyXP, _statsService.XPforNextLevel);
+            todoList.Redeemed = true;
+        }
+
+        _myListsOpen.Remove(todoList);
+        _myListsDone.Add(todoList);
+
+        await App.Database!.UpdateToDoListAsync(todoList);
+
+        SortAllLists();
+
+        StateHasChanged();
+
+        _logger.LogDebug($"Marked list (Id: {todoList.Id}) done.");
+    }
+
+    private async void MarkTodoListOpen(ToDoList todoList)
+    {
+        todoList.Done = false;
+
+        _myListsDone.Remove(todoList);
+        _myListsOpen.Add(todoList);
+
+        await App.Database!.UpdateToDoListAsync(todoList);
+
+        SortAllLists();
+
+        StateHasChanged();
+
+        _logger.LogDebug($"Marked list (Id: {todoList.Id}) open.");
+    }
+    #endregion
+
+    #region Modal Logic
+
+    // Show modal and load the selected list's ToDos
+    private async Task ShowTodoItemsModal(ToDoList todoList)
+    {
+        selectedList = todoList;
+
+        // Load items based on the list ID
+        await LoadTodoItems(todoList.Id); 
+
+        showModal = true;
+    }
+
+    // Close the modal
+    private void CloseModal()
+    {
+        showModal = false;
+        selectedList = null;
+        selectedListTodos.Clear();
+        newTodoDescription = string.Empty;
+    }
+
+    private async Task LoadTodoItems(int listId)
+    {
+        try
+        {
+            selectedListTodos = await App.Database!.GetToDosForListAsync(listId);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading ToDo items: {ex.Message}");
+        }
+    }
+
+    private async Task AddTodoItem()
+    {
+        if (!string.IsNullOrWhiteSpace(newTodoDescription))
+        {
+            try
+            {
+                var newTodo = new ToDo
+                    {
+                        Description = newTodoDescription,
+                        ToDoListId = selectedList?.Id ?? 0
+                    };
+
+                selectedListTodos.Add(newTodo);
+                newTodoDescription = string.Empty;
+
+                await App.Database!.SaveToDoAsync(newTodo);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error saving ToDo item: {ex.Message}");
+            }
+        }
+    }
+
+    private async Task MarkTodoAsDone(ToDo todo)
+    {
+        try
+        {
+            todo.Done = true;
+
+            if(!todo.Redeemed)
+            {
+                _statsService.AddXP(10);
+                await App.Database!.UpdateStatsAsync(_statsService.MyLevel, _statsService.MyXP, _statsService.XPforNextLevel);
+                todo.Redeemed = true;
+            }
+
+            await App.Database!.UpdateToDoAsync(todo);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error marking ToDo as done: {ex.Message}");
+        }
+    }
+
+
+
+    #endregion
+}

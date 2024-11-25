@@ -1,6 +1,6 @@
 ﻿<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">MyTasker</a>
+        <a class="navbar-brand" href="">Mein Planer</a>
     </div>
 </div>
 
@@ -9,13 +9,15 @@
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
     <nav class="flex-column">
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+            <NavLink class="nav-link d-flex align-items-center" href="/" Match="NavLinkMatch.All">
+                <i class="bi-check2-circle"></i>
+                <span class="ms-3">Meine Aufgaben</span>
             </NavLink>
         </div>
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Wetter
+            <NavLink class="nav-link d-flex align-items-center" href="lists">
+                <i class="bi-card-list"></i>
+                <span class="ms-3">Meine Listen</span>
             </NavLink>
         </div>
     </nav>
