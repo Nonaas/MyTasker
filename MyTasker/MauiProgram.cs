@@ -1,4 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
+using MyTasker.Domain.Services;
+using MyTasker.Domain.Services.Interfaces;
 
 namespace MyTasker
 {
@@ -12,13 +14,13 @@ namespace MyTasker
                 .ConfigureFonts(fonts =>
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
-                    fonts.AddFont("FreckleFace-Regular.ttf", "FreckleFace");
                 });
 
             builder.Services.AddMauiBlazorWebView();
+            builder.Services.AddScoped<IStatsService, StatsService>();
 
 #if DEBUG
-    		builder.Services.AddBlazorWebViewDeveloperTools();
+            builder.Services.AddBlazorWebViewDeveloperTools();
             builder.Logging
                 .AddDebug()
                 .AddConsole()
