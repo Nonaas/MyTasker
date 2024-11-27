@@ -1,6 +1,4 @@
-﻿using MyTasker.Domain.Services.Interfaces;
-
-namespace MyTasker.Domain.Services
+﻿namespace MyTasker.Domain.Services
 {
     public class StatsService : IStatsService
     {

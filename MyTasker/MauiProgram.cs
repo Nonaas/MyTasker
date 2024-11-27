@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
 using MyTasker.Domain.Services;
 using MyTasker.Domain.Services.Interfaces;
+using Radzen;
+using Radzen.Blazor;
 
 namespace MyTasker
 {
@@ -18,6 +20,7 @@ namespace MyTasker
 
             builder.Services.AddMauiBlazorWebView();
             builder.Services.AddScoped<IStatsService, StatsService>();
+            builder.Services.AddScoped<DialogService>();
 
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();

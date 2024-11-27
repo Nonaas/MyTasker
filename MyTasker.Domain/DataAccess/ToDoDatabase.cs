@@ -1,7 +1,4 @@
-﻿using MyTasker.Domain.Models;
-using SQLite;
-
-namespace MyTasker.Domain.DataAccess
+﻿namespace MyTasker.Domain.DataAccess
 {
     public class ToDoDatabase
     {
