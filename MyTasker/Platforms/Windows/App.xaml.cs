@@ -1,4 +1,5 @@
 ﻿using Microsoft.Toolkit.Uwp.Notifications;
+using MyTasker.Domain.Services;
 using Windows.Foundation.Collections;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -30,17 +31,18 @@ namespace MyTasker.WinUI
             // Handle notification activation
             if (e is ToastNotificationActivatedEventArgsCompat toastActivationArgs)
             {
-                // Obtain the arguments from the notification
+                // Obtain args from notification
                 ToastArguments args = ToastArguments.Parse(toastActivationArgs.Argument);
-
-                // Obtain any user input (text boxes, menu selections) from the notification
                 ValueSet userInput = toastActivationArgs.UserInput;
-                string userArguments = toastActivationArgs.Argument;
 
+                if (args.TryGetValue("StartingPage", out string startingPage))
+                {
+                    // Set value in shared service
+                    Services.GetRequiredService<NavigationService>()
+                            .SetNavigationPageValue(startingPage);
+                }
 
-                Console.WriteLine($"userInput = '{userInput.Keys.First()}' '{userInput.Values.First()}'");
-                Console.WriteLine($"userArguments = '{userArguments}'");
-
+                
             }
         }
 

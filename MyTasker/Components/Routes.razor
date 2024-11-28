@@ -1,4 +1,7 @@
-﻿<Router AppAssembly="@typeof(MauiProgram).Assembly">
+﻿@inject NavigationManager _navManager
+@inject NavigationService _navService
+
+<Router AppAssembly="@typeof(MauiProgram).Assembly">
     <Found Context="routeData">
         <RouteView RouteData="@routeData" DefaultLayout="@typeof(Layout.MainLayout)" />
         <FocusOnNavigate RouteData="@routeData" Selector="h1" />
@@ -9,9 +12,25 @@
 @code{
     protected override async Task OnInitializedAsync()
     {
+        _navService.OnValueChanged += HandleNotificationValueChanged;
+
+        // Navigate based on the value from the notification
+        if (!string.IsNullOrEmpty(_navService.NavigationPageValue))
+        {
+            _navManager.NavigateTo(_navService.NavigationPageValue);
+        }
+
         App.Stats = await App.Database!.GetStatsAsync();
 
         PermissionStatus status = await Permissions.RequestAsync<Permissions.PostNotifications>();
+    }
+
+    private void HandleNotificationValueChanged()
+    {
+        if (!string.IsNullOrEmpty(_navService.NavigationPageValue))
+        {
+            _navManager.NavigateTo(_navService.NavigationPageValue);
+        }
     }
 
 }
