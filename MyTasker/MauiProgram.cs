@@ -20,6 +20,7 @@ namespace MyTasker
             builder.Services.AddMauiBlazorWebView();
             builder.Services.AddScoped<IStatsService, StatsService>();
             builder.Services.AddScoped<DialogService>();
+            builder.Services.AddSingleton<NavigationService>();
 
 #if ANDROID
             builder.Services.AddTransient<INotificationManagerService, Platforms.Android.NotificationManagerService>();

@@ -37,7 +37,7 @@ namespace MyTasker.Platforms.Android
             }
         }
 
-        public void SendNotification(string title, string message, DateTime? notifyTime = null)
+        public void SendNotification(string title, string message, DateTime? notifyTime = null, Dictionary<string, string>? args = null)
         {
             if (!channelInitialized)
             {
@@ -123,5 +123,6 @@ namespace MyTasker.Platforms.Android
             long utcAlarmTime = utcTime.AddSeconds(-epochDiff).Ticks / 10000;
             return utcAlarmTime; // milliseconds
         }
+
     }
 }

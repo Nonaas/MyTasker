@@ -1,6 +1,7 @@
 ﻿@page "/lists"
 @inject ILogger<Home> _logger
 @inject IStatsService _statsService
+@inject INotificationManagerService _notificationService
 
 <div class="header-container">
     <div class="title-container">
@@ -128,9 +129,12 @@
         }
     }
 
-
     protected override async void OnInitialized()
     {
+         Dictionary<string, string> args = new();
+        args.Add("StartingPage", "lists");
+        _notificationService.SendNotification("Meine Listen", "Klicken um zu deinen Listen zurückzukehren.", DateTime.Now.AddSeconds(5), args);
+
         // Fetch from db
         _myListsOpen = await App.Database!.GetTodoListsAsync(false);
         _myListsDone = await App.Database.GetTodoListsAsync(true);

@@ -23,7 +23,9 @@ AppointmentMove=@OnAppointmentMove >
 @code {
     protected override void OnInitialized()
     {
-        _notificationService.SendNotification("Notification title goes here", "Notification messages goes here.", DateTime.Now.AddSeconds(5));
+        Dictionary<string, string> args = new();
+        args.Add("StartingPage", "calendar");
+        _notificationService.SendNotification("Mein Kalendar", "Klicken um zu deinem Kalendar zurückzukehren.", DateTime.Now.AddSeconds(5), args);
     }
 
 
