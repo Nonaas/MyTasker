@@ -8,14 +8,27 @@ namespace MyTasker.Platforms.Windows
         public event EventHandler NotificationReceived;
         public void ReceiveNotification(string title, string message) { }
 
-        public void SendNotification(string title, string message, DateTime? notifyTime = null) 
+
+        public void SendNotification(string title, string message, DateTime? notifyTime = null, Dictionary<string, string>? args = null)
         {
-            // Construct content
+            ToastContentBuilder msToast = InitToastContent(title, message);
+
+            SetNotificationArgs(args, msToast);
+
+            SetNotificationSchedule(notifyTime, msToast);
+        }
+
+        private static ToastContentBuilder InitToastContent(string title, string message)
+        {
             ToastContentBuilder msToast = new();
-            msToast.AddArgument("action", "viewItemsDueToday")
-                   .AddText(title)
+            msToast.AddText(title)
                    .AddText(message);
 
+            return msToast;
+        }
+
+        private static void SetNotificationSchedule(DateTime? notifyTime, ToastContentBuilder msToast)
+        {
             if (notifyTime != null)
             {
                 DateTimeOffset deliveryTime = notifyTime.Value;
@@ -25,10 +38,23 @@ namespace MyTasker.Platforms.Windows
             }
             else
             {
-                // Display toast
+                // Display toast now
                 msToast.Show();
             }
         }
+
+        private static void SetNotificationArgs(Dictionary<string, string>? dynamicArguments, ToastContentBuilder msToast)
+        {
+            // Add arguments if provided
+            if (dynamicArguments != null)
+            {
+                foreach (KeyValuePair<string,string> arg in dynamicArguments)
+                {
+                    msToast.AddArgument(arg.Key, arg.Value);
+                }
+            }
+        }
+
 
     }
 }
