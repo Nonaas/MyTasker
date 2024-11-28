@@ -4,6 +4,8 @@
   xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
   xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest"
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
+  xmlns:com="http://schemas.microsoft.com/appx/manifest/com/windows10"
   IgnorableNamespaces="uap rescap">
 
   <Identity Name="my-planner" Publisher="CN=Jonas Wahle" Version="1.0.2.0" />
@@ -36,6 +38,23 @@
         <uap:DefaultTile Square71x71Logo="$placeholder$.png" Wide310x150Logo="$placeholder$.png" Square310x310Logo="$placeholder$.png" />
         <uap:SplashScreen Image="$placeholder$.png" />
       </uap:VisualElements>
+
+	  <Extensions>
+		  <!--Specify which CLSID to activate when notification is clicked-->
+		  <desktop:Extension Category="windows.toastNotificationActivation">
+			  <desktop:ToastNotificationActivation ToastActivatorCLSID="AA57998A-18C1-4CA2-BCAE-29699391D34F" />
+		  </desktop:Extension>
+
+		  <!--Register COM CLSID-->
+		  <com:Extension Category="windows.comServer">
+			  <com:ComServer>
+				  <com:ExeServer Executable="MyTasker.exe" DisplayName="Mein Planer" Arguments="-ToastActivated">
+					  <com:Class Id="AA57998A-18C1-4CA2-BCAE-29699391D34F" />
+				  </com:ExeServer>
+			  </com:ComServer>
+		  </com:Extension>
+	  </Extensions>
+		
     </Application>
   </Applications>
 
