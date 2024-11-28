@@ -10,7 +10,7 @@
         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Wrap="FlexWrap.Wrap">
             <RadzenLabel Text="Start" Style="width: 6rem;" />
             <RadzenDatePicker @bind-Value="@model.Start" Name="Start" ShowTime="true" Style="width: 12rem;" />
-        <RadzenRequiredValidator Component="Start" Text="Start is required" />
+            <RadzenRequiredValidator Component="Start" Text="Start is required" />
         </RadzenStack>
         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Wrap="FlexWrap.Wrap">
             <RadzenLabel Text="End" Style="width: 6rem;" />
@@ -18,10 +18,12 @@
             <RadzenRequiredValidator Component="End" Text="End is required" />
         </RadzenStack>
         <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" >
-            <RadzenButton ButtonType="ButtonType.Submit" Text="Save" />
+            <RadzenButton class="rz-secondary" ButtonType="ButtonType.Submit" Text="Save" />
         </RadzenStack>
     </RadzenStack>
 </RadzenTemplateForm>
+
+
 @code {
     [Parameter]
     public Appointment Appointment { get; set; }

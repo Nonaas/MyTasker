@@ -18,10 +18,12 @@
             <RadzenRequiredValidator Component="End" Text="End is required" />
         </RadzenStack>
         <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" >
-            <RadzenButton ButtonType="ButtonType.Submit" Text="Save" />
+            <RadzenButton class="rz-secondary" ButtonType="ButtonType.Submit" Text="Save" />
         </RadzenStack>
     </RadzenStack>
 </RadzenTemplateForm>
+
+
 @code {
     [Parameter]
     public DateTime Start { get; set; }
