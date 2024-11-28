@@ -2,7 +2,6 @@
 using MyTasker.Domain.Services;
 using MyTasker.Domain.Services.Interfaces;
 using Radzen;
-using Radzen.Blazor;
 
 namespace MyTasker
 {
@@ -22,6 +21,13 @@ namespace MyTasker
             builder.Services.AddScoped<IStatsService, StatsService>();
             builder.Services.AddScoped<DialogService>();
 
+#if ANDROID
+            builder.Services.AddTransient<INotificationManagerService, Platforms.Android.NotificationManagerService>();
+#elif WINDOWS
+            builder.Services.AddTransient<INotificationManagerService, Platforms.Windows.NotificationManagerService>();
+#endif
+
+
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();
             builder.Logging
@@ -32,6 +38,7 @@ namespace MyTasker
 #endif
 
             return builder.Build();
+
         }
     }
 }

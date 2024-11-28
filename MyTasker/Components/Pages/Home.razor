@@ -87,8 +87,7 @@
         // Fetch from db
         MyTodosOpen = await App.Database!.GetToDosAsync(false);
         MyTodosDone = await App.Database.GetToDosAsync(true);
-        App.Stats = await App.Database.GetStatsAsync();
-
+        
         // Set user stats
         _statsService.MyLevel = App.Stats.CurrentLevel;
         _statsService.MyXP = App.Stats.CurrentXP;

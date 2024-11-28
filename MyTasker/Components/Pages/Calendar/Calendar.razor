@@ -2,6 +2,8 @@
 @inject ILogger<Home> _logger
 @inject IStatsService _statsService
 @inject DialogService _dialogService
+@inject INotificationManagerService _notificationService
+
 
 <div class="title-container">
     <h1>Mein Kalendar</h1>
@@ -9,9 +11,9 @@
 
 
 <RadzenScheduler @ref=@scheduler SlotRender=@OnSlotRender style="height: 768px;" TItem="Appointment" Data=@appointments StartProperty="Start" EndProperty="End"
-    TextProperty="Text" SelectedIndex="2"
-    SlotSelect=@OnSlotSelect AppointmentSelect=@OnAppointmentSelect AppointmentRender=@OnAppointmentRender
-    AppointmentMove=@OnAppointmentMove >
+TextProperty="Text" SelectedIndex="2"
+SlotSelect=@OnSlotSelect AppointmentSelect=@OnAppointmentSelect AppointmentRender=@OnAppointmentRender
+AppointmentMove=@OnAppointmentMove >
     <RadzenDayView />
     <RadzenWeekView />
     <RadzenMonthView />
@@ -19,8 +21,13 @@
 
 
 @code {
+    protected override void OnInitialized()
+    {
+        _notificationService.SendNotification("Notification title goes here", "Notification messages goes here.", DateTime.Now.AddSeconds(5));
+    }
+
+
     RadzenScheduler<Appointment>? scheduler;
-    // EventConsole console;
     Dictionary<DateTime, string> events = new Dictionary<DateTime, string>();
 
     IList<Appointment> appointments = new List<Appointment>
