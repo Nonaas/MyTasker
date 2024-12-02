@@ -1,0 +1,105 @@
+﻿@page "/followed-podcasts"
+@inject ILogger<Podcast> _logger
+@inject ApiService _apiService
+
+
+
+<RadzenStack Style="margin: 20px; padding: 20px;" Orientation="Orientation.Vertical" AlignItems="AlignItems.Stretch" Wrap="FlexWrap.Wrap">
+    <RadzenLabel Style="font-weight: bold;" Text="RSS-Feed URL eingeben:" />
+    <RadzenTextBox Name="Text" @bind-Value="@EnteredRssUrl" Placeholder="z.B. https://feeds.acast.com/public/shows/podcast-ufo" />
+    <RadzenRequiredValidator Component="Text" Text="RSS URL benötigt" />
+
+    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Left">
+        <RadzenButton class="rz-secondary" Click="SavePodcast" Text="Speichern" />
+    </RadzenStack>
+</RadzenStack>
+
+<div class="podcasts-section">
+    <div>
+        <ul>
+            @foreach (MyTasker.Domain.Models.Podcast poddi in Podcasts)
+            {
+                <li>
+                    <div @onclick="() => SelectPodcastFromList(poddi)">
+                        <img style="max-height:100px;" src="@poddi.ImageUrl" alt="Bild" id="poddiImage" />
+                        <label for="poddiImage">@poddi.Author</label>
+                    </div>
+                </li>
+            }
+        </ul>
+    </div>
+</div>
+
+
+@code {
+    private string EnteredRssUrl { get; set; }
+
+    private List<Domain.Models.Podcast> _podcasts = new();
+    public List<Domain.Models.Podcast> Podcasts
+    {
+        get { return _podcasts; }
+        set
+        {
+            _podcasts = value;
+        }
+    }
+
+    protected override async void OnInitialized()
+    {
+        _podcasts = await App.PodcastRepository!.GetPodcastsAsync();
+
+        StateHasChanged();
+
+        
+    }
+
+    private async Task SavePodcast()
+    {
+        var httpClient = new HttpClient();
+        var rssFeed = await httpClient.GetStringAsync(EnteredRssUrl);
+
+        var xmlDoc = new XmlDocument();
+        xmlDoc.LoadXml(rssFeed);
+
+        string imageUrl = string.Empty;
+        string author = string.Empty;
+
+        var channel = xmlDoc.SelectSingleNode("//channel");
+        if(channel != null)
+        {
+            author = channel.SelectSingleNode("title")?.InnerText!;    
+        }
+
+        var item = xmlDoc.SelectSingleNode("//item");
+        if (item != null)
+        {
+            XmlNamespaceManager nsManager = new XmlNamespaceManager(xmlDoc.NameTable);
+            nsManager.AddNamespace("itunes", "http://www.itunes.com/dtds/podcast-1.0.dtd");
+            imageUrl = item.SelectSingleNode("itunes:image", nsManager)?.Attributes["href"]?.Value;
+        }
+
+        if (!string.IsNullOrEmpty(author) && !string.IsNullOrEmpty(EnteredRssUrl))
+        {
+            Domain.Models.Podcast newPoddi = new()
+            {
+                Author = author,
+                RssFeedUrl = EnteredRssUrl,
+                ImageUrl = imageUrl
+            };
+
+            _podcasts.Add(newPoddi);
+
+            int rows = await App.PodcastRepository!.InsertPodcastAsync(newPoddi);
+            _logger.LogDebug($"INSERT - rows modified= " + rows);
+
+            StateHasChanged();
+        }
+    }
+
+    private void SelectPodcastFromList(MyTasker.Domain.Models.Podcast podcast)
+    {
+        _logger.LogDebug($"SELECTED PODCAST: " + podcast.Author);
+
+        App.NavigateTo("Podcast hören", podcast);
+    }
+}

@@ -85,8 +85,8 @@
     protected override async void OnInitialized()
     {
         // Fetch from db
-        MyTodosOpen = await App.Database!.GetToDosAsync(false);
-        MyTodosDone = await App.Database.GetToDosAsync(true);
+        MyTodosOpen = await App.DatabaseTodos!.GetToDosAsync(false);
+        MyTodosDone = await App.DatabaseTodos.GetToDosAsync(true);
         
         // Set user stats
         _statsService.MyLevel = App.Stats.CurrentLevel;
@@ -106,14 +106,14 @@
         if(!todo.Redeemed)
         {
             _statsService.AddXP(10);
-            await App.Database!.UpdateStatsAsync(_statsService.MyLevel, _statsService.MyXP, _statsService.XPforNextLevel);
+            await App.DatabaseTodos!.UpdateStatsAsync(_statsService.MyLevel, _statsService.MyXP, _statsService.XPforNextLevel);
             todo.Redeemed = true;
         }
 
         MyTodosOpen.Remove(todo);
         MyTodosDone.Add(todo);
 
-        await App.Database!.UpdateToDoAsync(todo);
+        await App.DatabaseTodos!.UpdateToDoAsync(todo);
 
         SortAllEntries();
 
@@ -129,7 +129,7 @@
         MyTodosDone.Remove(todo);
         MyTodosOpen.Add(todo);
 
-        await App.Database!.UpdateToDoAsync(todo);
+        await App.DatabaseTodos!.UpdateToDoAsync(todo);
 
         SortAllEntries();
 
@@ -157,7 +157,7 @@
         };
         MyTodosOpen.Add(newTodo);
 
-        int rows = await App.Database!.SaveToDoAsync(newTodo);
+        int rows = await App.DatabaseTodos!.SaveToDoAsync(newTodo);
         _logger.LogDebug($"INSERT - rows modified= " + rows);
         SortAllEntries();
 
@@ -179,7 +179,7 @@
         {
             MyTodosDone.Clear();
 
-            await App.Database!.DeleteAllDoneTodosAsync();
+            await App.DatabaseTodos!.DeleteAllDoneTodosAsync();
 
             StateHasChanged();
         }

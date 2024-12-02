@@ -46,7 +46,7 @@ AppointmentMove=@OnAppointmentMove >
         //     DateTime.Now.AddSeconds(5), 
         //     args);
 
-        _appointments = await App.Database!.GetAppointmentsAsync();
+        _appointments = await App.DatabaseTodos!.GetAppointmentsAsync();
 
         StateHasChanged();
 
@@ -85,7 +85,7 @@ AppointmentMove=@OnAppointmentMove >
             {
                 _appointments.Add(data);
 
-                await App.Database!.InsertAppointmentAsync(data);
+                await App.DatabaseTodos!.InsertAppointmentAsync(data);
 
                 StateHasChanged();
 
@@ -123,7 +123,7 @@ AppointmentMove=@OnAppointmentMove >
             args.Data.WholeDay = data.WholeDay;
             args.Data.Color = data.Color;
 
-            await App.Database!.UpdateAppointmentAsync(data);
+            await App.DatabaseTodos!.UpdateAppointmentAsync(data);
 
             StateHasChanged();
         }
@@ -154,7 +154,7 @@ AppointmentMove=@OnAppointmentMove >
 
             draggedAppointment.End = draggedAppointment.End + args.TimeSpan;
 
-            await App.Database!.UpdateAppointmentAsync(draggedAppointment);
+            await App.DatabaseTodos!.UpdateAppointmentAsync(draggedAppointment);
 
             StateHasChanged();
 

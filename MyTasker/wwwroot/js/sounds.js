@@ -51,15 +51,28 @@ function LoadAudioPlayer() {
 }
 
 // Custom player controls
+function TogglePlayPause() {
+    const audioPlayer = document.getElementById("audioPlayer");
+
+    if (audioPlayer) {
+        if (audioPlayer.paused) {
+            audioPlayer.play().catch((e) => console.error("Error playing audio:", e));
+        } else {
+            audioPlayer.pause();
+        }
+
+        // Optionally return the new state for C# integration
+        return !audioPlayer.paused;
+    } else {
+        console.error("Audio player element not found.");
+        return null; // Indicate error
+    }
+}
+
 function PlayAudio() {
     const audioPlayer = document.getElementById("audioPlayer");
     audioPlayer.load();
     audioPlayer.play().catch((e) => console.error("Error playing audio:", e));
-}
-
-function PauseAudio() {
-    const audioPlayer = document.getElementById("audioPlayer");
-    audioPlayer.pause();
 }
 
 function StopAudio() {
@@ -68,6 +81,8 @@ function StopAudio() {
     audioPlayer.pause();
     audioPlayer.load();
 }
+
+
 
 function UpdateSeekBar() {
     const audioPlayer = document.getElementById("audioPlayer");

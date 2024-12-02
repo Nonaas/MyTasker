@@ -1,0 +1,159 @@
+﻿/* General Player Styling */
+.custom-audio-player {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0;
+    font-family: 'Arial', sans-serif;
+    background-color: #f9f9f9;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    min-height: 300px; 
+}
+
+
+/* Common Image Styling */
+img, #imagePlaceholder {
+    width: 100%;
+    max-width: 200px;
+    height: auto;
+    min-height: 200px; 
+    max-height: 200px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    margin-bottom: 15px;
+    transition: transform 0.3s ease-in-out;
+}
+
+    img:hover, #imagePlaceholder:hover {
+        transform: scale(1.05);
+    }
+
+/* Controls Styling */
+.controls {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+    justify-content: center;
+    width: 100%;
+}
+
+    .controls button {
+        background-color: #3498db;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        padding: 15px;
+        cursor: pointer;
+        font-size: 18px;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+
+        .controls button:hover {
+            background-color: #2980b9;
+            transform: scale(1.1);
+        }
+
+        .controls button:active {
+            transform: scale(1.05);
+        }
+
+/* Seek Bar Styling */
+#seekBar {
+    width: 80%;
+    max-width: 500px;
+    margin-top: 20px;
+    appearance: none;
+    height: 10px;
+    background: #ecf0f1;
+    border-radius: 5px;
+    outline: none;
+    transition: background 0.3s ease;
+}
+
+    #seekBar::-webkit-slider-thumb, #seekBar::-moz-range-thumb {
+        appearance: none;
+        width: 15px;
+        height: 15px;
+        background-color: #3498db;
+        border-radius: 50%;
+        cursor: pointer;
+    }
+
+        #seekBar::-webkit-slider-thumb:hover, #seekBar::-moz-range-thumb:hover {
+            background-color: #2980b9;
+        }
+
+    #seekBar:focus {
+        background: #dfe6e9;
+    }
+
+/* Episodes List Styling */
+ul {
+    list-style-type: none;
+    padding: 0;
+    margin-top: 20px;
+    width: 100%;
+    max-width: 600px;
+}
+
+li {
+    background-color: #ffffff;
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+    li:hover {
+        transform: scale(1.02);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    li strong {
+        font-size: 18px;
+        color: #333;
+    }
+
+/* Play Button Styling (Common with Controls Button) */
+button {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-top: 10px;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+    button:hover {
+        background-color: #2980b9;
+        transform: scale(1.05);
+    }
+
+    button:active {
+        transform: scale(1.02);
+    }
+
+
+.podcast-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px; /* Space between sections */
+    height: 100vh; /* Full viewport height */
+    margin-top: 15px;
+    padding: 0 20px; /* Add padding for sides */
+}
+
+.podcast-section {
+    flex: 1; /* Take up equal space */
+    overflow-y: auto; /* Ensure scrollable content if needed */
+    padding: 10px;
+    box-sizing: border-box;
+    border-top: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
+}

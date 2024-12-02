@@ -8,5 +8,6 @@
         public string Author { get; set; }
         public string Link { get; set; }
         public string AudioUrl { get; set; }
+        public string ImageUrl { get; set; }
     }
 }

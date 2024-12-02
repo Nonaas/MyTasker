@@ -1,0 +1,225 @@
+﻿@page "/podcast"
+@inject ILogger<Podcast> _logger
+@inject IJSRuntime _jsRuntime
+
+<div class="podcast-container container-fluid">
+    <div class="row">
+        <!-- Audio Player Section -->
+        <div class="col-lg-6 col-md-12 custom-audio-player">
+            @if (!string.IsNullOrEmpty(CurrentImageUrl))
+            {
+                <img src="@CurrentImageUrl" alt="Podcast Image" class="img-fluid mb-3">
+            }
+            else
+            {
+                <div id="imagePlaceholder" class="mb-3"></div>
+            }
+            <input type="range" id="seekBar" value="0" class="form-range mb-2" />
+            <label for="seekBar" id="seekBarLabel" class="d-block">00:00 / 00:00</label>
+            <audio id="audioPlayer" class="w-100">
+                <source src="@CurrentAudioUrl" type="audio/mpeg" />
+                @* RSS-URL for testing: 
+                   https://feeds.acast.com/public/shows/podcast-ufo *@
+            </audio>
+            <div class="controls d-flex justify-content-between mt-2">
+                <button class="btn btn-primary" @onclick="SkipBackward">
+                    <i class="bi-skip-backward-fill"></i>
+                </button>
+                <button class="btn btn-primary" @onclick="TogglePlayPause">
+                    @((MarkupString)(isPlaying
+                        ? "<i class='bi-pause-fill'></i>"
+                        : "<i class='bi-play-fill'></i>"))
+                </button>
+                <button class="btn btn-primary" @onclick="StopAudioPlayer">
+                    <i class="bi-stop-fill"></i>
+                </button>
+                <button class="btn btn-primary" @onclick="SkipForward">
+                    <i class="bi-skip-forward-fill"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Podcast Episode List Section -->
+        <div class="col-lg-6 col-md-12 podcast-section">
+            @if (Episodes != null && Episodes.Any())
+            {
+                <ul class="list-group">
+                    @foreach (PodcastEpisode episode in Episodes)
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>@episode.Title</strong><br />
+                                <div style="display:none;">@episode.AudioUrl</div>
+                            </div>
+                            <button class="btn btn-success" @onclick="() => SelectEpisodeToPlay(episode.AudioUrl, episode.ImageUrl)">Play</button>
+                        </li>
+                    }
+                </ul>
+            }
+            else if (Episodes == null && !string.IsNullOrEmpty(ErrorMessage))
+            {
+                <p class="text-danger">@ErrorMessage</p>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<PodcastEpisode> Episodes { get; set; }
+    private string CurrentAudioUrl { get; set; }
+    private string CurrentImageUrl { get; set; }
+    private bool isPlaying = false;
+    private string ErrorMessage { get; set; }
+
+
+    protected override void OnInitialized()
+    {
+        App.OnDataChanged += App_OnDataChanged;
+    }
+
+    private async void App_OnDataChanged(object? sender, object data)
+    {
+        if (data != null && data is Domain.Models.Podcast poddi)
+        {
+            await LoadPodcastEpisodes(poddi.RssFeedUrl);
+
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadPodcastEpisodes(string rssUrl)
+    {
+        try
+        {
+            ErrorMessage = null;
+            Episodes = await FetchPodcastEpisodesAsync(rssUrl);
+
+            @if (string.IsNullOrEmpty(CurrentImageUrl))
+            {
+                CurrentImageUrl = Episodes[0].ImageUrl;
+            }
+
+            _jsRuntime.InvokeVoidAsync("SetupPlayer");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to load podcasts");
+            ErrorMessage = "Failed to load podcasts. Please check the RSS URL.";
+        }
+    }
+
+    private async Task SelectEpisodeToPlay(string audioUrl, string imageUrl)
+    {
+        CurrentAudioUrl = audioUrl;
+        CurrentImageUrl = imageUrl;
+
+        await _jsRuntime.InvokeVoidAsync("LoadAudioPlayer");
+        await _jsRuntime.InvokeVoidAsync("PlayAudio");
+
+        isPlaying = true;
+    }
+
+    private async Task<List<PodcastEpisode>> FetchPodcastEpisodesAsync(string rssUrl)
+    {
+        var episodes = new List<PodcastEpisode>();
+        var httpClient = new HttpClient();
+        var rssFeed = await httpClient.GetStringAsync(rssUrl);
+
+        var xmlDoc = new XmlDocument();
+        xmlDoc.LoadXml(rssFeed);
+
+        XmlNamespaceManager nsManager = new XmlNamespaceManager(xmlDoc.NameTable);
+
+        var channel = xmlDoc.SelectSingleNode("//channel");
+        string author = string.Empty;
+        if (channel != null)
+        {
+            author = channel.SelectSingleNode("title")?.InnerText!;
+        }
+
+        var items = xmlDoc.SelectNodes("//item");
+        if (items != null)
+        {
+            foreach (XmlNode item in items)
+            {
+                nsManager.AddNamespace("itunes", "http://www.itunes.com/dtds/podcast-1.0.dtd");
+
+                var title = item.SelectSingleNode("title")?.InnerText;
+                var description = item.SelectSingleNode("description")?.InnerText;
+                var pubDate = item.SelectSingleNode("pubDate")?.InnerText;
+                var link = item.SelectSingleNode("link")?.InnerText;
+                var audioUrl = item.SelectSingleNode("enclosure")?.Attributes["url"]?.Value;
+                var imageUrl = item.SelectSingleNode("itunes:image", nsManager)?.Attributes["href"]?.Value;
+
+                if (!string.IsNullOrEmpty(title) && !string.IsNullOrEmpty(audioUrl))
+                {
+                    episodes.Add(new PodcastEpisode
+                        {
+                            Title = title,
+                            Description = description,
+                            PubDate = pubDate,
+                            Author = author,
+                            Link = link,
+                            AudioUrl = audioUrl,
+                            ImageUrl = imageUrl
+                        });
+                }
+            }
+        }
+
+        return episodes;
+    }
+
+    #region Audio Player Controls
+    private async Task TogglePlayPause()
+    {
+        try
+        {
+            var result = await _jsRuntime.InvokeAsync<bool?>("TogglePlayPause");
+
+            if (result.HasValue)
+            {
+                isPlaying = result.Value;
+            }
+            else
+            {
+                Console.WriteLine("Error: Could not determine playback state.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error calling TogglePlayPause: {ex.Message}");
+        }
+    }
+
+    private void StopAudioPlayer()
+    {
+        _jsRuntime.InvokeVoidAsync("StopAudio");
+        isPlaying = false;
+    }
+
+    private async Task SkipBackward()
+    {
+        try
+        {
+            await _jsRuntime.InvokeVoidAsync("SkipAudio", -10);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error skipping backward: {ex.Message}");
+        }
+    }
+
+    private async Task SkipForward()
+    {
+        try
+        {
+            await _jsRuntime.InvokeVoidAsync("SkipAudio", 10);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error skipping forward: {ex.Message}");
+        }
+    }
+    #endregion
+}

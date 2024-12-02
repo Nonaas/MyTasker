@@ -20,7 +20,7 @@
             _navManager.NavigateTo(_navService.NavigationPageValue);
         }
 
-        App.Stats = await App.Database!.GetStatsAsync();
+        App.Stats = await App.DatabaseTodos!.GetStatsAsync();
 
         PermissionStatus status = await Permissions.RequestAsync<Permissions.PostNotifications>();
     }

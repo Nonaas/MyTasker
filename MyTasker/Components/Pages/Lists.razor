@@ -136,8 +136,8 @@
         // _notificationService.SendNotification("Meine Listen", "Klicken um zu deinen Listen zurückzukehren.", DateTime.Now.AddSeconds(5), args);
 
         // Fetch from db
-        _myListsOpen = await App.Database!.GetTodoListsAsync(false);
-        _myListsDone = await App.Database.GetTodoListsAsync(true);
+        _myListsOpen = await App.DatabaseTodos!.GetTodoListsAsync(false);
+        _myListsDone = await App.DatabaseTodos.GetTodoListsAsync(true);
 
         _logger.LogDebug($"Finished initializing lists page");
 
@@ -164,7 +164,7 @@
             };
         _myListsOpen.Add(newTodoList);
 
-        int rows = await App.Database!.SaveToDoListAsync(newTodoList);
+        int rows = await App.DatabaseTodos!.SaveToDoListAsync(newTodoList);
         _logger.LogDebug($"INSERT - rows modified= " + rows);
         SortAllLists();
 
@@ -186,7 +186,7 @@
         {
             _myListsDone.Clear();
 
-            await App.Database!.DeleteAllDoneToDoListsAsync();
+            await App.DatabaseTodos!.DeleteAllDoneToDoListsAsync();
 
             StateHasChanged();
         }
@@ -211,14 +211,14 @@
         if (!todoList.Redeemed)
         {
             _statsService.AddXP(25);
-            await App.Database!.UpdateStatsAsync(_statsService.MyLevel, _statsService.MyXP, _statsService.XPforNextLevel);
+            await App.DatabaseTodos!.UpdateStatsAsync(_statsService.MyLevel, _statsService.MyXP, _statsService.XPforNextLevel);
             todoList.Redeemed = true;
         }
 
         _myListsOpen.Remove(todoList);
         _myListsDone.Add(todoList);
 
-        await App.Database!.UpdateToDoListAsync(todoList);
+        await App.DatabaseTodos!.UpdateToDoListAsync(todoList);
 
         SortAllLists();
 
@@ -234,7 +234,7 @@
         _myListsDone.Remove(todoList);
         _myListsOpen.Add(todoList);
 
-        await App.Database!.UpdateToDoListAsync(todoList);
+        await App.DatabaseTodos!.UpdateToDoListAsync(todoList);
 
         SortAllLists();
 
@@ -270,7 +270,7 @@
     {
         try
         {
-            selectedListTodos = await App.Database!.GetToDosForListAsync(listId);
+            selectedListTodos = await App.DatabaseTodos!.GetToDosForListAsync(listId);
         }
         catch (Exception ex)
         {
@@ -293,7 +293,7 @@
                 selectedListTodos.Add(newTodo);
                 newTodoDescription = string.Empty;
 
-                await App.Database!.SaveToDoAsync(newTodo);
+                await App.DatabaseTodos!.SaveToDoAsync(newTodo);
             }
             catch (Exception ex)
             {
@@ -311,11 +311,11 @@
             if(!todo.Redeemed)
             {
                 _statsService.AddXP(10);
-                await App.Database!.UpdateStatsAsync(_statsService.MyLevel, _statsService.MyXP, _statsService.XPforNextLevel);
+                await App.DatabaseTodos!.UpdateStatsAsync(_statsService.MyLevel, _statsService.MyXP, _statsService.XPforNextLevel);
                 todo.Redeemed = true;
             }
 
-            await App.Database!.UpdateToDoAsync(todo);
+            await App.DatabaseTodos!.UpdateToDoAsync(todo);
         }
         catch (Exception ex)
         {

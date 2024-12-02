@@ -19,6 +19,7 @@ namespace MyTasker
 
             builder.Services.AddMauiBlazorWebView();
             builder.Services.AddScoped<IStatsService, StatsService>();
+            builder.Services.AddScoped<ApiService>();
             builder.Services.AddScoped<DialogService>();
             builder.Services.AddSingleton<NavigationService>();
 
