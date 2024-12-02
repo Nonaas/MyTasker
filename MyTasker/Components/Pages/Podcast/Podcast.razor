@@ -1,0 +1,137 @@
+﻿@page "/podcast"
+@inject ILogger<Podcast> _logger
+@inject IJSRuntime _jsRuntime
+
+
+<div class="title-container">
+    <h1>Meine Podcasts</h1>
+</div>
+
+<div>
+    <input @bind="RssUrl" placeholder="Enter RSS feed URL" />
+    <button @onclick="LoadPodcastEpisodes">Load Podcasts</button>
+</div>
+
+<div class="custom-audio-player">
+    <input type="range" id="seekBar" value="0" />
+        <label for="seekBar" id="seekBarLabel">00:00 / 00:00</label>
+    <audio id="audioPlayer">
+        <source src="@CurrentAudioUrl" type="audio/mpeg" /> 
+        @* 
+        RSS-URL for testing: 
+        https://feeds.acast.com/public/shows/podcast-ufo
+        *@
+    </audio>
+    <div class="controls">
+        <button @onclick="PlayAudioPlayer">▶️ Play</button>
+        <button @onclick="PauseAudioPlayer">⏸ Pause</button>
+        <button @onclick="StopAudioPlayer">⏹ Stop</button>
+        
+    </div>
+</div>
+
+@if (Episodes != null && Episodes.Any())
+{
+    <ul>
+        @foreach (PodcastEpisode episode in Episodes)
+        {
+            <li>
+                <strong>@episode.Title</strong><br />
+                <div style="display:none;">@episode.AudioUrl</div>
+                <button @onclick="() => PlayEpisode(episode.AudioUrl)">Play</button>
+            </li><br/>
+        }
+    </ul>
+}
+else if (Episodes == null && !string.IsNullOrEmpty(ErrorMessage))
+{
+    <p>@ErrorMessage</p>
+}
+
+
+@code {
+    private string RssUrl { get; set; }
+    private List<PodcastEpisode> Episodes { get; set; }
+    private string CurrentAudioUrl { get; set; }
+    private string ErrorMessage { get; set; }
+
+
+    private async Task LoadPodcastEpisodes()
+    {
+        try
+        {
+            ErrorMessage = null;
+            Episodes = await FetchPodcastEpisodesAsync(RssUrl);
+
+            _jsRuntime.InvokeVoidAsync("SetupPlayer");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to load podcasts");
+            ErrorMessage = "Failed to load podcasts. Please check the RSS URL.";
+        }
+    }
+
+    private async Task PlayEpisode(string audioUrl)
+    {
+        CurrentAudioUrl = audioUrl;
+        await _jsRuntime.InvokeVoidAsync("LoadAudioPlayer");
+        await _jsRuntime.InvokeVoidAsync("PlayAudio");
+    }
+
+    private async Task<List<PodcastEpisode>> FetchPodcastEpisodesAsync(string rssUrl)
+    {
+        var episodes = new List<PodcastEpisode>();
+        var httpClient = new HttpClient();
+        var rssFeed = await httpClient.GetStringAsync(rssUrl);
+
+        var xmlDoc = new XmlDocument();
+        xmlDoc.LoadXml(rssFeed);
+
+        var items = xmlDoc.SelectNodes("//item");
+        if (items != null)
+        {
+            foreach (XmlNode item in items)
+            {
+                var title = item.SelectSingleNode("title")?.InnerText;
+                var description = item.SelectSingleNode("description")?.InnerText;
+                var pubDate = item.SelectSingleNode("pubDate")?.InnerText;
+                var link = item.SelectSingleNode("link")?.InnerText;
+                var author = item.SelectSingleNode("author")?.InnerText;
+                var audioUrl = item.SelectSingleNode("enclosure")?.Attributes["url"]?.Value;
+
+                if (!string.IsNullOrEmpty(title) && !string.IsNullOrEmpty(link))
+                {
+                    episodes.Add(new PodcastEpisode
+                        {
+                            Title = title,
+                            Description = description,
+                            PubDate = pubDate,
+                            Author = author,
+                            Link = link,
+                            AudioUrl = audioUrl
+                        });
+                }
+            }
+        }
+
+        return episodes;
+    }
+
+    #region Audio Player Controls
+    private void PlayAudioPlayer()
+    {
+        _jsRuntime.InvokeVoidAsync("PlayAudio");
+    }
+
+    private void PauseAudioPlayer()
+    {
+        _jsRuntime.InvokeVoidAsync("PauseAudio");
+    }
+
+    private void StopAudioPlayer()
+    {
+        _jsRuntime.InvokeVoidAsync("StopAudio");
+    }
+    #endregion
+}
