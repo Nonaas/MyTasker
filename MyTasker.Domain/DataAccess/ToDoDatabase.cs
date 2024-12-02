@@ -6,10 +6,11 @@
 
         public ToDoDatabase(string dbPath)
         {
-            _database = new SQLiteAsyncConnection(dbPath);
+            _database = new SQLiteAsyncConnection(dbPath, false);
             _database.CreateTableAsync<Stats>().Wait();
             _database.CreateTableAsync<ToDo>().Wait();
             _database.CreateTableAsync<ToDoList>().Wait();
+            _database.CreateTableAsync<Appointment>().Wait();
 
             // Init stats
             int statsRows = _database.Table<Stats>().CountAsync().GetAwaiter().GetResult();
@@ -21,17 +22,7 @@
             }
         }
 
-        public Task<List<ToDo>> GetToDosAsync(bool done)
-        {
-            Task<List<ToDo>> loadedTodos =
-                _database.Table<ToDo>()
-                         .Where(t => t.Done == done 
-                                  && t.ToDoListId == 0)
-                         .ToListAsync();
-
-            return loadedTodos;
-        }
-
+        #region Stats
         public async Task<Stats> GetStatsAsync()
         {
             Stats loadedStats = await _database.Table<Stats>()
@@ -45,6 +36,19 @@
             string sql = "UPDATE Stats SET CurrentLevel = ?, CurrentXP = ?, XPforNextLevel = ? WHERE Id = 1;";
 
             await _database.ExecuteAsync(sql, newLevel, newXP, newXPforNextLevel);
+        }
+        #endregion
+
+        #region ToDos
+        public Task<List<ToDo>> GetToDosAsync(bool done)
+        {
+            Task<List<ToDo>> loadedTodos =
+                _database.Table<ToDo>()
+                         .Where(t => t.Done == done 
+                                  && t.ToDoListId == 0)
+                         .ToListAsync();
+
+            return loadedTodos;
         }
 
         public async Task<int> DeleteAllDoneTodosAsync()
@@ -76,7 +80,9 @@
 
             return rowsModified;
         }
+        #endregion
 
+        #region ToDo Lists
         public Task<List<ToDoList>> GetTodoListsAsync(bool done)
         {
             Task<List<ToDoList>> loadedTodos =
@@ -117,5 +123,31 @@
 
             return rowsModified;
         }
+        #endregion
+
+        #region Appointments
+        public async Task<List<Appointment>> GetAppointmentsAsync()
+        {
+            List<Appointment> loadedAppointments = 
+                await _database.Table<Appointment>()
+                               .ToListAsync();
+            
+            return loadedAppointments;
+        }
+
+        public Task<int> InsertAppointmentAsync(Appointment appointment)
+        {
+            Task<int> rowsModified = _database.InsertAsync(appointment);
+            
+            return rowsModified;
+        }
+
+        public Task<int> UpdateAppointmentAsync(Appointment appointment)
+        {
+            Task<int> rowsModified = _database.UpdateAsync(appointment);
+
+            return rowsModified;
+        }
+        #endregion
     }
 }

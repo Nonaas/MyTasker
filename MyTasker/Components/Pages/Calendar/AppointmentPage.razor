@@ -1,0 +1,97 @@
+﻿@inject DialogService _dialogService
+@inject ILogger<AppointmentPage> _logger
+
+<RadzenTemplateForm TItem="Appointment" Data="@editableAppointment" Submit=@OnSubmit>
+    <RadzenStack Gap="1rem">
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Wrap="FlexWrap.Wrap">
+            <RadzenLabel Style="width: 4rem;" Text="Titel" />
+            <RadzenTextBox Style="width: 16rem;" @bind-Value="@editableAppointment.Text" Name="Text" />
+            <RadzenRequiredValidator Component="Text" Text="Titel benötigt" />
+        </RadzenStack>
+
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Wrap="FlexWrap.Wrap">
+            <RadzenLabel Style="width: 4rem;" Text="Ganztägig" />
+            <RadzenCheckBox TValue="bool" @bind-Value="@editableAppointment.WholeDay" Change=@(isChecked => CheckBox_OnValueChanged(isChecked)) Name="CheckBox" />
+                
+            <RadzenLabel Style="width: 3rem;" Text="Farbe" />
+            <RadzenColorPicker @bind-Value=@editableAppointment.Color ShowHSV="true" ShowRGBA="false" ShowColors="true" ShowButton="true" Change=@ColorPicker_OnValueChange />
+        </RadzenStack>
+
+        <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Start" Wrap="FlexWrap.Wrap">
+
+            <RadzenLabel Style="width: 6rem;" Text="Start" />
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Wrap="FlexWrap.Wrap">
+                <RadzenDatePicker Style="width: 8rem;" Name="Start" @bind-Value="@editableAppointment.Start" DateFormat="dd.MM.yyyy" ShowTime="false" />
+                @if (!editableAppointment.WholeDay)
+                {
+                    <RadzenDatePicker Style="width: 6rem;" Name="Start" @bind-Value="@editableAppointment.Start" DateFormat="HH:mm" ShowTime="true" TimeOnly="true" />
+                }
+                <RadzenRequiredValidator Component="Start" Text="Start benötigt" />
+            </RadzenStack>
+
+            <RadzenLabel Style="width: 6rem;" Text="Ende" />
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Wrap="FlexWrap.Wrap">
+                <RadzenDatePicker Style="width: 8rem;" Name="End" @bind-Value="@editableAppointment.End" DateFormat="dd.MM.yyyy" ShowTime="false" />
+                @if (!editableAppointment.WholeDay)
+                {
+                    <RadzenDatePicker Style="width: 6rem;" Name="End" @bind-Value="@editableAppointment.End" DateFormat="HH:mm" ShowTime="true" TimeOnly="true" />
+                }
+                <RadzenRequiredValidator Component="End" Text="Ende benötigt" />
+            </RadzenStack>
+
+        </RadzenStack>
+
+        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
+            <RadzenButton class="rz-secondary" ButtonType="ButtonType.Submit" Text="Speichern" />
+        </RadzenStack>
+    </RadzenStack>
+</RadzenTemplateForm>
+
+@code {
+    [Parameter]
+    public Appointment? Appointment { get; set; }
+    Appointment editableAppointment = new Appointment();
+
+    [Parameter]
+    public DateTime? Start { get; set; }
+
+    [Parameter]
+    public DateTime? End { get; set; }
+
+
+    protected override void OnParametersSet()
+    {
+        if (Appointment != null)
+        {
+            // Edit mode
+            editableAppointment = Appointment;
+        }
+        else
+        {
+            // Add mode
+            editableAppointment = new Appointment
+            {
+                Start = Start ?? DateTime.Now,
+                End = End ?? DateTime.Now,
+                Color = "rgb(218, 199, 147)"
+            };
+        }
+    }
+
+    void OnSubmit(Appointment model)
+    {
+        _dialogService.Close(model);
+    }
+
+    void CheckBox_OnValueChanged(bool isChecked)
+    {
+        editableAppointment.WholeDay = isChecked;
+    }
+
+    void ColorPicker_OnValueChange(string value)
+    {
+        _logger.LogDebug($"Color value changed to: {value}");
+
+        editableAppointment.Color = value;
+    }
+}

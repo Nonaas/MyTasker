@@ -1,0 +1,9 @@
+﻿.rz-scheduler {
+    min-height: 70vh;
+}
+
+@media (min-width: 640px) {
+    .rz-scheduler {
+        min-height: 100vh;
+    }
+}

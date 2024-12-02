@@ -1,5 +1,6 @@
 ﻿@page "/calendar"
-@inject ILogger<Home> _logger
+@attribute [StreamRendering]
+@inject ILogger<Calendar> _logger
 @inject IStatsService _statsService
 @inject DialogService _dialogService
 @inject INotificationManagerService _notificationService
@@ -10,7 +11,7 @@
 </div>
 
 
-<RadzenScheduler @ref=@scheduler SlotRender=@OnSlotRender Style="min-height: 70vh;" TItem="Appointment" Data=@_appointments StartProperty="Start" EndProperty="End"
+<RadzenScheduler @ref=@scheduler SlotRender=@OnSlotRender Style="min-height: 75vh;" TItem="Appointment" Data=@_appointments StartProperty="Start" EndProperty="End"
 TextProperty="Text" SelectedIndex="2"
 SlotSelect=@OnSlotSelect AppointmentSelect=@OnAppointmentSelect AppointmentRender=@OnAppointmentRender
 AppointmentMove=@OnAppointmentMove >
@@ -37,13 +38,13 @@ AppointmentMove=@OnAppointmentMove >
 
     protected override async void OnInitialized()
     {
-        Dictionary<string, string> args = new();
-        args.Add("StartingPage", "calendar");
-        _notificationService.SendNotification(
-            "Mein Kalendar", 
-            "Klicken um zu deinem Kalendar zurückzukehren.", 
-            DateTime.Now.AddSeconds(5), 
-            args);
+        // Dictionary<string, string> args = new();
+        // args.Add("StartingPage", "calendar");
+        // _notificationService.SendNotification(
+        //     "Mein Kalendar", 
+        //     "Klicken um zu deinem Kalendar zurückzukehren.", 
+        //     DateTime.Now.AddSeconds(5), 
+        //     args);
 
         _appointments = await App.Database!.GetAppointmentsAsync();
 
@@ -75,9 +76,9 @@ AppointmentMove=@OnAppointmentMove >
 
         if (args.View.Text != "Year")
         {
-            Appointment data = await _dialogService.OpenAsync<AddAppointmentPage>(
+            Appointment data = await _dialogService.OpenAsync<AppointmentPage>(
                 "Termin hinzufügen",
-                new Dictionary<string, object> { { "Start", args.Start }, { "Ende", args.End } }, 
+                new Dictionary<string, object> { { "Start", args.Start }, { "End", args.End } }, 
                 new DialogOptions() { CloseDialogOnOverlayClick = true });
 
             if (data != null)
@@ -103,10 +104,12 @@ AppointmentMove=@OnAppointmentMove >
         {
             Start = args.Data.Start,
             End = args.Data.End,
-            Text = args.Data.Text
+            Text = args.Data.Text,
+            WholeDay = args.Data.WholeDay,
+            Color = args.Data.Color
         };
 
-        var data = await _dialogService.OpenAsync<EditAppointmentPage>(
+        var data = await _dialogService.OpenAsync<AppointmentPage>(
             "Termin bearbeiten", 
             new Dictionary<string, object> { { "Appointment", copy } },
             new DialogOptions() { CloseDialogOnOverlayClick = true });
@@ -117,6 +120,8 @@ AppointmentMove=@OnAppointmentMove >
             args.Data.Start = data.Start;
             args.Data.End = data.End;
             args.Data.Text = data.Text;
+            args.Data.WholeDay = data.WholeDay;
+            args.Data.Color = data.Color;
 
             await App.Database!.UpdateAppointmentAsync(data);
 
@@ -130,6 +135,10 @@ AppointmentMove=@OnAppointmentMove >
     {
         // Never call StateHasChanged in AppointmentRender - would lead to infinite loop
 
+        if (!string.IsNullOrEmpty(args.Data.Color))
+        {
+            args.Attributes["style"] = $"background: {args.Data.Color}";
+        }
         if (args.Data.Text == "Geburtstag")
         {
             args.Attributes["style"] = "background: red";

@@ -13,9 +13,9 @@ namespace MyTasker
         public App()
         {
             InitializeComponent();
+            string dbPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "mytasker.db");
 
             // Inizialize sqlite db
-            string dbPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ToDoApp.db");
             Database = new ToDoDatabase(dbPath);
         }
 
